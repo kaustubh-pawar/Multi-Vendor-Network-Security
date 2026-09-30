@@ -4,14 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
-  Shield, Activity, Brain, Radar, AlertTriangle, FileText, Lock, ChevronRight,
+  Shield, Activity, Brain, Radar, FileText, Lock, ChevronRight,
   Terminal, Fingerprint, KeyRound, CheckCircle2, UserPlus, AlertCircle,
-  ShieldCheck, Cpu, Layers, ShieldAlert
+  ShieldCheck, Layers, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { CyberBackground, Scanline } from '@/components/shared/CyberBackground';
 import { useApp } from '@/context/AppContext';
 import { useTypewriter } from '@/hooks/useAnimations';
-import { findOrCreateUser, saveUser, type StoredUser } from '@/data/usersData';
+import {
+  findUserByEmail,
+  verifyUserCredentials,
+  registerNewUser,
+  getStoredUsers,
+  type StoredUser
+} from '@/data/usersData';
 
 type LoginPhase = 'landing' | 'auth' | 'booting';
 
@@ -53,13 +59,13 @@ function LandingScreen({ onEnter }: { onEnter: () => void }) {
     { label: 'AI PATTERN CLASSIFIER', icon: Brain },
     { label: 'MULTI-VENDOR DATABASE', icon: Radar },
     { label: 'CIS BENCHMARKS ENGINE', icon: ShieldAlert },
-    { label: 'NIST 800-53 REVI 5', icon: Layers },
+    { label: 'NIST 800-53 REV 5', icon: Layers },
     { label: 'PDF & EXCEL REPORT ENGINE', icon: FileText },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header bar */}
+      {/* Top navbar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-[#1f222a]">
         <div className="flex items-center gap-2.5">
           <div className="relative">
@@ -67,17 +73,17 @@ function LandingScreen({ onEnter }: { onEnter: () => void }) {
             <div className="absolute inset-0 bg-[#f59e0b]/30 blur-md rounded-full" />
           </div>
           <span className="font-mono text-sm font-bold tracking-wider text-white">ANCP</span>
-          <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/40 text-[#f59e0b] font-bold">
+          <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/40 text-[#f59e0b] font-bold">
             AI INTELLIGENCE PLATFORM
           </span>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs text-slate-400">
           <span className="w-2.5 h-2.5 rounded-full bg-pass animate-ping" />
-          <span className="text-pass font-bold">ENGINE ONLINE · AUDITED NODES</span>
+          <span className="text-pass font-bold">SYSTEM OPERATIONAL · ENGINE ONLINE</span>
         </div>
       </div>
 
-      {/* Main hero area */}
+      {/* Main hero section */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl">
           <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 1, type: 'spring' }} className="relative mx-auto mb-8 w-24 h-24">
@@ -111,13 +117,13 @@ function LandingScreen({ onEnter }: { onEnter: () => void }) {
               className="btn-amber-pill px-8 py-4 text-sm font-bold flex items-center gap-2 transition-all shadow-[0_0_25px_rgba(245,158,11,0.4)] group"
             >
               <Terminal className="w-5 h-5 text-black" />
-              ENTER AUDITOR COMMAND CENTER
+              ENTER SECURITY COMMAND CENTER
               <ChevronRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         </motion.div>
 
-        {/* System status grid */}
+        {/* Status card */}
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.5 }} className="mt-14 w-full max-w-lg glass-panel p-6 border border-[#1f222a]">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-mono uppercase tracking-widest text-[#f59e0b] font-bold">Engine System Status</span>
@@ -143,8 +149,8 @@ function LandingScreen({ onEnter }: { onEnter: () => void }) {
       </div>
 
       <div className="px-6 py-4 border-t border-[#1f222a] flex items-center justify-between font-mono text-[11px] text-slate-500">
-        <span>v2.0.0 PRODUCTION · AI COMPLIANCE PLATFORM</span>
-        <span>ENCRYPTED AUDITOR CHANNEL · FASTAPI 0.110.0</span>
+        <span>v2.4.1 PRODUCTION · SECURE TERMINAL</span>
+        <span>ENCRYPTED CHANNEL · FASTAPI 0.110.0</span>
       </div>
     </div>
   );
@@ -154,28 +160,30 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
   const { audio, setCurrentUser } = useApp();
   const [tab, setTab] = useState<'login' | 'register'>('login');
 
-  // Login state
-  const [email, setEmail] = useState('kaustubh1006p@gmail.com');
-  const [password, setPassword] = useState('threat2risk');
+  // Login form state - starts empty
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Registration state
+  // Registration form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regKey, setRegKey] = useState('');
   const [regConfirmKey, setRegConfirmKey] = useState('');
   const [regClearance, setRegClearance] = useState('L4 Clearance');
 
-  // Verification state
+  // Boot verification sequence
   const [verifying, setVerifying] = useState(false);
   const [verifyStep, setVerifyStep] = useState(0);
   const verifySteps = [
-    'Encrypting credentials over TLS 1.3 channel...',
-    'Authenticating identity against auditor database...',
-    'Verifying Security Auditor clearance level...',
-    'Establishing encrypted audit session token...',
-    'Access granted. Launching Auditor Command Center...',
+    'Verifying TLS 1.3 encrypted handshake...',
+    'Authenticating identity against registered dataset...',
+    'Checking analyst clearance level...',
+    'Session token issued. Launching Security Command Center...',
   ];
+
+  const presetUsers = getStoredUsers();
 
   useEffect(() => {
     if (!verifying) return;
@@ -193,20 +201,29 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
     audio.play('click');
 
     if (!email.trim() || !password.trim()) {
-      setErrorMessage('Please enter both Email and Access Key.');
+      setErrorMessage('Please enter both your registered Email and Access Key.');
       audio.play('alert');
       return;
     }
 
-    const user = findOrCreateUser(email.trim(), password.trim());
+    // Strict Credential Verification against registered dataset
+    const authResult = verifyUserCredentials(email.trim(), password.trim());
+    if (!authResult.success || !authResult.user) {
+      setErrorMessage(authResult.error || 'Authentication failed.');
+      audio.play('alert');
+      return;
+    }
+
+    // Set active current user
     setCurrentUser({
-      name: user.name,
-      email: user.email,
-      clearance: user.clearance,
-      role: user.role,
+      name: authResult.user.name,
+      email: authResult.user.email,
+      clearance: authResult.user.clearance,
+      role: authResult.user.role,
     });
 
     setVerifying(true);
@@ -216,10 +233,11 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
     audio.play('click');
 
     if (!regName.trim() || !regEmail.trim() || !regKey.trim()) {
-      setErrorMessage('All fields are required for Auditor Registration.');
+      setErrorMessage('All fields are required for Analyst Registration.');
       audio.play('alert');
       return;
     }
@@ -230,7 +248,7 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
       return;
     }
 
-    const newUser: StoredUser = {
+    const newUserObj: StoredUser = {
       name: regName.trim(),
       email: regEmail.trim().toLowerCase(),
       accessKey: regKey,
@@ -238,17 +256,31 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
       role: 'Security Auditor',
     };
 
-    saveUser(newUser);
-    setCurrentUser({
-      name: newUser.name,
-      email: newUser.email,
-      clearance: newUser.clearance,
-      role: newUser.role,
-    });
+    const regResult = registerNewUser(newUserObj);
+    if (!regResult.success) {
+      setErrorMessage(regResult.error || 'Registration failed.');
+      audio.play('alert');
+      return;
+    }
 
+    // Registration successful -> pre-fill login email & show notice
+    setSuccessMessage(`REGISTRATION SUCCESSFUL! Analyst "${newUserObj.name}" registered. You can now enter your Access Key to log in.`);
     audio.play('success');
-    setVerifying(true);
-    setVerifyStep(0);
+    setTab('login');
+    setEmail(newUserObj.email);
+    setPassword('');
+    setRegName('');
+    setRegEmail('');
+    setRegKey('');
+    setRegConfirmKey('');
+  };
+
+  const selectPresetUser = (u: StoredUser) => {
+    audio.play('click');
+    setEmail(u.email);
+    setPassword(u.accessKey);
+    setErrorMessage(null);
+    setSuccessMessage(null);
   };
 
   return (
@@ -262,25 +294,25 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
           <div className="flex items-center justify-center gap-2 mb-6 p-1 bg-[#08090d] rounded-xl border border-[#1f222a] font-mono text-xs">
             <button
               type="button"
-              onClick={() => { setTab('login'); setErrorMessage(null); audio.play('click'); }}
+              onClick={() => { setTab('login'); setErrorMessage(null); setSuccessMessage(null); audio.play('click'); }}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 tab === 'login'
-                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40 font-bold'
+                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40 font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Lock className="w-3.5 h-3.5 text-[#f59e0b]" /> SECURE ACCESS
+              <Lock className="w-3.5 h-3.5" /> SECURE ACCESS
             </button>
             <button
               type="button"
-              onClick={() => { setTab('register'); setErrorMessage(null); audio.play('click'); }}
+              onClick={() => { setTab('register'); setErrorMessage(null); setSuccessMessage(null); audio.play('click'); }}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                 tab === 'register'
-                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40 font-bold'
+                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40 font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <UserPlus className="w-3.5 h-3.5 text-[#f59e0b]" /> REGISTER AUDITOR
+              <UserPlus className="w-3.5 h-3.5" /> REGISTER ANALYST
             </button>
           </div>
 
@@ -289,19 +321,31 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
               {tab === 'login' ? <Lock className="w-6 h-6 text-[#f59e0b]" /> : <UserPlus className="w-6 h-6 text-[#f59e0b]" />}
               <div className="absolute inset-0 rounded-full bg-[#f59e0b]/20 blur-md" />
             </div>
-            <h2 className="text-xl font-serif font-bold text-white tracking-wide">
-              {tab === 'login' ? 'SECURE AUDITOR TERMINAL' : 'ANALYST REGISTRATION'}
+            <h2 className="text-xl font-bold text-white font-mono tracking-wide">
+              {tab === 'login' ? 'SECURE ACCESS TERMINAL' : 'ANALYST REGISTRATION'}
             </h2>
             <p className="text-xs text-slate-400 font-mono mt-1">
-              {tab === 'login' ? 'IDENTITY VERIFICATION · ACCESS KEY · SECURITY CLEARANCE' : 'REGISTER NEW AUDITOR PROFILE IN SECURE DATASET'}
+              {tab === 'login' ? 'IDENTITY VERIFICATION & ACCESS KEY AUTHENTICATION' : 'REGISTER NEW ANALYST IDENTITY & SET ACCESS KEY'}
             </p>
           </div>
 
+          {/* Success Banner */}
+          {successMessage && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-4 p-3.5 rounded-xl bg-pass/15 border border-pass/40 text-pass font-mono text-xs flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">STATUS NOTICE</p>
+                <p className="text-[11px] text-slate-300 mt-0.5">{successMessage}</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Error Banner */}
           {errorMessage && (
-            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3.5 rounded-xl bg-fail/10 border border-fail/30 text-fail font-mono text-xs flex items-start gap-2">
+            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3.5 rounded-xl bg-fail/15 border border-fail/40 text-fail font-mono text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold">AUTHENTICATION ALERT</p>
+                <p className="font-bold">AUTHENTICATION ERROR</p>
                 <p className="text-[11px] text-slate-300 mt-0.5">{errorMessage}</p>
               </div>
             </motion.div>
@@ -311,7 +355,7 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
             tab === 'login' ? (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-mono uppercase tracking-wider text-[#f59e0b] mb-1.5">Auditor Identity (Email)</label>
+                  <label className="block text-[11px] font-mono uppercase tracking-wider text-[#f59e0b] mb-1.5">Identity (Email)</label>
                   <div className="relative">
                     <Fingerprint className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
@@ -319,7 +363,7 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl pl-10 pr-4 py-2.5 font-mono text-xs text-white focus:border-[#f59e0b] focus:outline-none"
+                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl pl-10 pr-4 py-2.5 font-mono text-xs text-slate-200 focus:border-[#f59e0b] focus:outline-none transition-colors"
                       placeholder="e.g. kaustubh1006p@gmail.com"
                     />
                   </div>
@@ -334,9 +378,30 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl pl-10 pr-4 py-2.5 font-mono text-xs text-white focus:border-[#f59e0b] focus:outline-none"
+                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl pl-10 pr-4 py-2.5 font-mono text-xs text-slate-200 focus:border-[#f59e0b] focus:outline-none transition-colors"
                       placeholder="••••••••"
                     />
+                  </div>
+                </div>
+
+                {/* Preset Analyst Quick-Select Account Chips */}
+                <div className="pt-1">
+                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#f59e0b]" /> Quick-Select Registered Identities:
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                    {presetUsers.map((u) => (
+                      <button
+                        key={u.email}
+                        type="button"
+                        onClick={() => selectPresetUser(u)}
+                        className="px-2.5 py-1 rounded-lg bg-[#08090d] border border-[#22252e] hover:border-[#f59e0b]/50 text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+                        <span>{u.name.split(' ')[0]}</span>
+                        <span className="text-[10px] text-slate-500">({u.accessKey})</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -347,25 +412,25 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
             ) : (
               <form onSubmit={handleRegisterSubmit} className="space-y-3 font-mono text-xs">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#f59e0b] mb-1">Full Auditor Name</label>
+                  <label className="block text-[11px] uppercase tracking-wider text-[#f59e0b] mb-1">Full Analyst Name</label>
                   <input
                     type="text"
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-white focus:border-[#f59e0b] focus:outline-none"
+                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none"
                     placeholder="e.g. Kaustubh Pawar"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#f59e0b] mb-1">Auditor Email</label>
+                  <label className="block text-[11px] uppercase tracking-wider text-[#f59e0b] mb-1">Analyst Email</label>
                   <input
                     type="email"
                     required
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
-                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-white focus:border-[#f59e0b] focus:outline-none"
+                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none"
                     placeholder="e.g. kaustubh1006p@gmail.com"
                   />
                 </div>
@@ -378,7 +443,7 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                       required
                       value={regKey}
                       onChange={(e) => setRegKey(e.target.value)}
-                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-white focus:border-[#f59e0b] focus:outline-none"
+                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none"
                       placeholder="••••••••"
                     />
                   </div>
@@ -390,7 +455,7 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                       required
                       value={regConfirmKey}
                       onChange={(e) => setRegConfirmKey(e.target.value)}
-                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-white focus:border-[#f59e0b] focus:outline-none"
+                      className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none"
                       placeholder="••••••••"
                     />
                   </div>
@@ -401,17 +466,17 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                   <select
                     value={regClearance}
                     onChange={(e) => setRegClearance(e.target.value)}
-                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-white focus:border-[#f59e0b] focus:outline-none font-mono"
+                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none font-mono"
                   >
                     <option value="L4 Clearance">L4 Lead Clearance</option>
-                    <option value="L3 Senior Clearance">L3 Senior Auditor</option>
-                    <option value="L2 Threat Clearance">L2 Security Investigator</option>
+                    <option value="L3 Senior Clearance">L3 Senior Investigator</option>
+                    <option value="L2 Threat Clearance">L2 Threat Hunter</option>
                     <option value="Executive Clearance">Executive Clearance</option>
                   </select>
                 </div>
 
                 <button type="submit" className="btn-amber-pill w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 group mt-3">
-                  <UserPlus className="w-4 h-4 text-black" /> CREATE AUDITOR ACCOUNT & LOGIN <ChevronRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
+                  <UserPlus className="w-4 h-4 text-black" /> REGISTER ANALYST & SET ACCESS KEY <ChevronRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>
             )
@@ -452,14 +517,14 @@ function BootSequence({ onComplete }: { onComplete: () => void }) {
   const lines = [
     '> ACCESS GRANTED',
     `> WELCOME ${currentUser.name.toUpperCase()} (${currentUser.clearance.toUpperCase()})`,
-    '> INITIALIZING ANCP SECURITY COMPLIANCE AUDITOR...',
-    '> Loading Cisco IOS / Junos / FortiOS parsers... OK',
-    '> Loading CIS Benchmarks & NIST 800-53 engines... OK',
-    '> Loading AI Random Forest classifier... OK',
-    '> Loading audited device configurations... OK',
-    '> Connecting SQLite database ledger... OK',
-    '> Establishing encrypted security telemetry channel... OK',
-    `> Compliance auditor system ready for ${currentUser.email}.`,
+    '> INITIALIZING SECURITY INTELLIGENCE PLATFORM...',
+    '> Loading SIEM connectors... OK',
+    '> Loading AI investigation engine... OK',
+    '> Loading risk intelligence engine... OK',
+    '> Loading MITRE ATT&CK framework... OK',
+    '> Loading GRC / ISO 27001 / NIST mappings... OK',
+    '> Establishing secure telemetry feeds... OK',
+    `> Security intelligence system ready for ${currentUser.email}.`,
   ];
   const [visibleLines, setVisibleLines] = useState(0);
 
@@ -500,7 +565,7 @@ function BootSequence({ onComplete }: { onComplete: () => void }) {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 pt-4 border-t border-[#1f222a]">
               <div className="flex items-center gap-2 text-pass font-bold">
                 <CheckCircle2 className="w-5 h-5" />
-                <span>SYSTEM READY — ENTERING AUDITOR COMMAND CENTER AS {currentUser.name.toUpperCase()}</span>
+                <span>SYSTEM READY — ENTERING COMMAND CENTER AS {currentUser.name.toUpperCase()}</span>
               </div>
             </motion.div>
           )}

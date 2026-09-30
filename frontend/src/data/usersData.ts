@@ -9,24 +9,27 @@ export interface UserProfile {
 
 export interface StoredUser extends UserProfile {
   accessKey: string;
+  isVerified?: boolean;
 }
 
 const STORAGE_KEY = 'ancp_auditor_users';
 
 export const INITIAL_USERS: StoredUser[] = [
   {
-    name: 'Lead Security Auditor',
-    email: 'auditor@ancp.io',
-    accessKey: 'ancp123',
-    clearance: 'L4 Lead Clearance',
-    role: 'Lead Security Auditor',
-  },
-  {
     name: 'Kaustubh Pawar',
     email: 'kaustubh1006p@gmail.com',
     accessKey: 'threat2risk',
     clearance: 'L4 Lead Clearance',
     role: 'Principal Compliance Auditor',
+    isVerified: true,
+  },
+  {
+    name: 'Lead Security Auditor',
+    email: 'auditor@ancp.io',
+    accessKey: 'ancp123',
+    clearance: 'L4 Lead Clearance',
+    role: 'Lead Security Auditor',
+    isVerified: true,
   },
   {
     name: 'CISO Administrator',
@@ -34,6 +37,7 @@ export const INITIAL_USERS: StoredUser[] = [
     accessKey: 'ancp123',
     clearance: 'Executive Clearance',
     role: 'Chief Information Security Officer',
+    isVerified: true,
   },
 ];
 
@@ -52,10 +56,15 @@ export function getStoredUsers(): StoredUser[] {
   }
 }
 
+export function findUserByEmail(email: string): StoredUser | undefined {
+  const users = getStoredUsers();
+  return users.find((u) => u.email.toLowerCase().trim() === email.toLowerCase().trim());
+}
+
 export function saveUser(user: StoredUser): StoredUser[] {
   const current = getStoredUsers();
   const index = current.findIndex(
-    (u) => u.email.toLowerCase() === user.email.toLowerCase()
+    (u) => u.email.toLowerCase().trim() === user.email.toLowerCase().trim()
   );
   let updated: StoredUser[];
   if (index >= 0) {
@@ -74,29 +83,42 @@ export function saveUser(user: StoredUser): StoredUser[] {
   return updated;
 }
 
-export function findOrCreateUser(email: string, pass: string, name?: string, clearance?: string): StoredUser {
-  const users = getStoredUsers();
-  const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+export function registerNewUser(user: StoredUser): { success: boolean; user?: StoredUser; error?: string } {
+  const existing = findUserByEmail(user.email);
   if (existing) {
-    if (pass && existing.accessKey !== pass) {
-      existing.accessKey = pass;
-      saveUser(existing);
-    }
-    return existing;
+    return {
+      success: false,
+      error: `Email identity "${user.email}" is already registered. Please log in using SECURE ACCESS.`,
+    };
   }
 
-  const derivedName = name && name.trim()
-    ? name.trim()
-    : email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-
   const newUser: StoredUser = {
-    name: derivedName,
-    email: email.toLowerCase().trim(),
-    accessKey: pass || 'ancp123',
-    clearance: clearance || 'L4 Lead Clearance',
-    role: 'Security Auditor',
+    ...user,
+    email: user.email.toLowerCase().trim(),
+    isVerified: true,
   };
 
   saveUser(newUser);
-  return newUser;
+  return { success: true, user: newUser };
+}
+
+export function verifyUserCredentials(email: string, pass: string): { success: boolean; user?: StoredUser; error?: string } {
+  const cleanEmail = email.toLowerCase().trim();
+  const user = findUserByEmail(cleanEmail);
+
+  if (!user) {
+    return {
+      success: false,
+      error: `ERR_UNAUTHORIZED: Identity "${cleanEmail}" is not registered. You MUST complete Auditor Registration first.`,
+    };
+  }
+
+  if (user.accessKey !== pass) {
+    return {
+      success: false,
+      error: `ERR_INVALID_KEY: Incorrect Access Key for identity "${cleanEmail}".`,
+    };
+  }
+
+  return { success: true, user };
 }
