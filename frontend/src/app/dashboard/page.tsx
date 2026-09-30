@@ -25,10 +25,11 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { fetchAuditJobs, fetchFindingsSummary } from '@/lib/api';
+import { fetchAuditJobs, fetchFindingsSummary, fetchMonitoredDevices } from '@/lib/api';
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<any[]>([]);
+  const [devices, setDevices] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -38,12 +39,14 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [jobsData, summaryData] = await Promise.all([
+        const [jobsData, summaryData, devicesData] = await Promise.all([
           fetchAuditJobs(),
-          fetchFindingsSummary()
+          fetchFindingsSummary(),
+          fetchMonitoredDevices()
         ]);
         setJobs(jobsData);
         setSummary(summaryData);
+        setDevices(devicesData);
       } catch (err) {
         console.error('Error loading dashboard:', err);
       } finally {
@@ -112,7 +115,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-serif font-bold text-white">{totalJobs}</span>
+            <span className="text-4xl font-serif font-bold text-white">{devices.length || totalJobs}</span>
             <span className="text-xs text-muted-foreground font-mono font-medium">Nodes</span>
           </div>
           <p className="text-[11px] text-muted-foreground">Cisco IOS, Junos & FortiOS devices</p>
