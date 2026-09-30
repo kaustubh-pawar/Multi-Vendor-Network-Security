@@ -384,27 +384,6 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                   </div>
                 </div>
 
-                {/* Preset Analyst Quick-Select Account Chips */}
-                <div className="pt-1">
-                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#f59e0b]" /> Quick-Select Registered Identities:
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-                    {presetUsers.map((u) => (
-                      <button
-                        key={u.email}
-                        type="button"
-                        onClick={() => selectPresetUser(u)}
-                        className="px-2.5 py-1 rounded-lg bg-[#08090d] border border-[#22252e] hover:border-[#f59e0b]/50 text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
-                        <span>{u.name.split(' ')[0]}</span>
-                        <span className="text-[10px] text-slate-500">({u.accessKey})</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <button type="submit" className="btn-amber-pill w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 group mt-3">
                   <ShieldCheck className="w-4 h-4 text-black" /> SECURE ACCESS <ChevronRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -459,20 +438,6 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
                       placeholder="••••••••"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-[#f59e0b] mb-1">Clearance Level</label>
-                  <select
-                    value={regClearance}
-                    onChange={(e) => setRegClearance(e.target.value)}
-                    className="w-full bg-[#14151a] border border-[#22252e] rounded-xl px-3.5 py-2 text-slate-200 focus:border-[#f59e0b] focus:outline-none font-mono"
-                  >
-                    <option value="L4 Clearance">L4 Lead Clearance</option>
-                    <option value="L3 Senior Clearance">L3 Senior Investigator</option>
-                    <option value="L2 Threat Clearance">L2 Threat Hunter</option>
-                    <option value="Executive Clearance">Executive Clearance</option>
-                  </select>
                 </div>
 
                 <button type="submit" className="btn-amber-pill w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 group mt-3">
