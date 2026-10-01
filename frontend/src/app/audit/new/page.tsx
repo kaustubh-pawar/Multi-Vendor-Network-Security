@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, Terminal, ShieldCheck, FileText, Server, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 import { uploadAuditConfig, connectSSHAudit, getApiBase } from '@/lib/api';
+import { downloadPdfTemplate } from '@/lib/pdfHelper';
 import { useApp } from '@/context/AppContext';
 
 const SAMPLE_CISCO_INSECURE = `! Insecure Cisco IOS Sample
@@ -263,15 +264,13 @@ export default function NewAuditPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono text-slate-400">Load Sample Fixtures or Download PDF Template:</span>
-              <a
-                href={`${getApiBase()}/audit/template/pdf?vendor=cisco`}
-                target="_blank"
-                rel="noreferrer"
-                download="Network_Configuration_Template_Cisco.pdf"
+              <button
+                type="button"
+                onClick={() => downloadPdfTemplate(vendorHint === 'auto' ? 'cisco' : vendorHint)}
                 className="px-3 py-1 rounded-full bg-[#f59e0b]/15 border border-[#f59e0b]/50 hover:bg-[#f59e0b]/25 text-[11px] font-mono text-[#f59e0b] font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
               >
                 <FileText className="h-3.5 w-3.5 text-[#f59e0b]" /> Download PDF Template (.pdf)
-              </a>
+              </button>
             </div>
             <div className="flex flex-wrap gap-2">
               <button

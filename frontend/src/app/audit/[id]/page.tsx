@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { fetchAuditJobById, getApiBase } from '@/lib/api';
+import { downloadPdfReport, downloadExcelReport } from '@/lib/pdfHelper';
 
 export default function AuditJobDetailPage() {
   const params = useParams();
@@ -97,22 +98,20 @@ export default function AuditJobDetailPage() {
           <div className="h-10 w-px bg-[#1f222a]"></div>
 
           <div className="flex flex-col gap-2">
-            <a
-              href={`${getApiBase()}/reports/pdf/${job.id}`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={() => downloadPdfReport(job)}
               className="btn-amber-pill inline-flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all"
             >
               <Download className="h-3.5 w-3.5 text-black" /> Download PDF Report
-            </a>
-            <a
-              href={`${getApiBase()}/reports/excel/${job.id}`}
-              target="_blank"
-              rel="noreferrer"
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadExcelReport(job)}
               className="btn-black-pill inline-flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all"
             >
               <Download className="h-3.5 w-3.5 text-[#f59e0b]" /> Download Excel Matrix
-            </a>
+            </button>
           </div>
         </div>
       </div>
