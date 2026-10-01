@@ -99,3 +99,15 @@ class MLModelVersion(Base):
     trained_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
     model_card = Column(JSON, nullable=True)
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(128))
+    email = Column(String(128), unique=True, index=True)
+    access_key = Column(String(128))
+    clearance = Column(String(64), default="L4 Lead Clearance")
+    role = Column(String(64), default="Security Auditor")
+    is_verified = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

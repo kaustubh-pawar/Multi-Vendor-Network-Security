@@ -11,11 +11,13 @@ import {
 import { CyberBackground, Scanline } from '@/components/shared/CyberBackground';
 import { useApp } from '@/context/AppContext';
 import { useTypewriter } from '@/hooks/useAnimations';
+import { loginUserApi, registerUserApi } from '@/lib/api';
 import {
   findUserByEmail,
   verifyUserCredentials,
   registerNewUser,
   getStoredUsers,
+  saveUser,
   type StoredUser
 } from '@/data/usersData';
 
@@ -199,39 +201,70 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
     return () => clearTimeout(t);
   }, [verifying, verifyStep, audio, onAccess, verifySteps.length]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
     audio.play('click');
 
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
       setErrorMessage('Please enter both your registered Email and Access Key.');
       audio.play('alert');
       return;
     }
 
-    // Strict Credential Verification against registered dataset
-    const authResult = verifyUserCredentials(email.trim(), password.trim());
-    if (!authResult.success || !authResult.user) {
-      setErrorMessage(authResult.error || 'Authentication failed.');
+    // 1. Verify via local dataset
+    const authResult = verifyUserCredentials(cleanEmail, cleanPassword);
+    
+    if (authResult.success && authResult.user) {
+      setCurrentUser({
+        name: authResult.user.name,
+        email: authResult.user.email,
+        clearance: authResult.user.clearance,
+        role: authResult.user.role,
+      });
+      setVerifying(true);
+      setVerifyStep(0);
+      return;
+    }
+
+    // 2. Fallback attempt via Backend Auth API
+    try {
+      const apiResult = await loginUserApi(cleanEmail, cleanPassword);
+      if (apiResult.success && apiResult.user) {
+        // Save user locally for offline access
+        saveUser({
+          name: apiResult.user.name,
+          email: apiResult.user.email,
+          accessKey: cleanPassword,
+          clearance: apiResult.user.clearance,
+          role: apiResult.user.role,
+        });
+        setCurrentUser({
+          name: apiResult.user.name,
+          email: apiResult.user.email,
+          clearance: apiResult.user.clearance,
+          role: apiResult.user.role,
+        });
+        setVerifying(true);
+        setVerifyStep(0);
+        return;
+      }
+    } catch (apiErr: any) {
+      // If API error, show authResult error or apiErr detail
+      setErrorMessage(apiErr.message || authResult.error || 'Authentication failed.');
       audio.play('alert');
       return;
     }
 
-    // Set active current user
-    setCurrentUser({
-      name: authResult.user.name,
-      email: authResult.user.email,
-      clearance: authResult.user.clearance,
-      role: authResult.user.role,
-    });
-
-    setVerifying(true);
-    setVerifyStep(0);
+    setErrorMessage(authResult.error || 'Authentication failed.');
+    audio.play('alert');
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -263,6 +296,17 @@ function AuthScreen({ onAccess }: { onAccess: () => void }) {
       audio.play('alert');
       return;
     }
+
+    // Optionally register with backend API if connected
+    try {
+      await registerUserApi({
+        name: newUserObj.name,
+        email: newUserObj.email,
+        accessKey: newUserObj.accessKey,
+        clearance: newUserObj.clearance,
+        role: newUserObj.role,
+      });
+    } catch { /* local user saved successfully */ }
 
     // Registration successful -> pre-fill login email & show notice
     setSuccessMessage(`REGISTRATION SUCCESSFUL! Analyst "${newUserObj.name}" registered. You can now enter your Access Key to log in.`);

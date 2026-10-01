@@ -9,7 +9,8 @@ from app.api import (
     reports_routes,
     device_routes,
     finding_routes,
-    remediation_routes
+    remediation_routes,
+    auth_routes
 )
 from app.ml.predictor import load_ml_artifacts
 
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 # Register API routers
+app.include_router(auth_routes.router)
 app.include_router(audit_routes.router)
 app.include_router(device_routes.router)
 app.include_router(finding_routes.router)

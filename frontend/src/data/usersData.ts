@@ -50,28 +50,43 @@ export function getStoredUsers(): StoredUser[] {
       return INITIAL_USERS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_USERS;
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+      return INITIAL_USERS;
+    }
+    // Merge INITIAL_USERS to ensure default accounts are always accessible
+    const merged = [...parsed];
+    for (const initUser of INITIAL_USERS) {
+      if (!merged.some((u) => u.email.toLowerCase().trim() === initUser.email.toLowerCase().trim())) {
+        merged.push(initUser);
+      }
+    }
+    return merged;
   } catch {
     return INITIAL_USERS;
   }
 }
 
 export function findUserByEmail(email: string): StoredUser | undefined {
+  const cleanEmail = email.toLowerCase().trim();
   const users = getStoredUsers();
-  return users.find((u) => u.email.toLowerCase().trim() === email.toLowerCase().trim());
+  const found = users.find((u) => u.email.toLowerCase().trim() === cleanEmail);
+  if (found) return found;
+  return INITIAL_USERS.find((u) => u.email.toLowerCase().trim() === cleanEmail);
 }
 
 export function saveUser(user: StoredUser): StoredUser[] {
   const current = getStoredUsers();
+  const cleanEmail = user.email.toLowerCase().trim();
   const index = current.findIndex(
-    (u) => u.email.toLowerCase().trim() === user.email.toLowerCase().trim()
+    (u) => u.email.toLowerCase().trim() === cleanEmail
   );
   let updated: StoredUser[];
   if (index >= 0) {
     updated = [...current];
-    updated[index] = user;
+    updated[index] = { ...user, email: cleanEmail };
   } else {
-    updated = [user, ...current];
+    updated = [{ ...user, email: cleanEmail }, ...current];
   }
   if (typeof window !== 'undefined') {
     try {
@@ -84,17 +99,18 @@ export function saveUser(user: StoredUser): StoredUser[] {
 }
 
 export function registerNewUser(user: StoredUser): { success: boolean; user?: StoredUser; error?: string } {
-  const existing = findUserByEmail(user.email);
+  const cleanEmail = user.email.toLowerCase().trim();
+  const existing = findUserByEmail(cleanEmail);
   if (existing) {
     return {
       success: false,
-      error: `Email identity "${user.email}" is already registered. Please log in using SECURE ACCESS.`,
+      error: `Email identity "${cleanEmail}" is already registered. Please log in using SECURE ACCESS.`,
     };
   }
 
   const newUser: StoredUser = {
     ...user,
-    email: user.email.toLowerCase().trim(),
+    email: cleanEmail,
     isVerified: true,
   };
 
@@ -109,7 +125,7 @@ export function verifyUserCredentials(email: string, pass: string): { success: b
   if (!user) {
     return {
       success: false,
-      error: `ERR_UNAUTHORIZED: Identity "${cleanEmail}" is not registered. You MUST complete Auditor Registration first.`,
+      error: `ERR_UNAUTHORIZED: Identity "${cleanEmail}" is not registered. You MUST complete Analyst Registration first.`,
     };
   }
 
