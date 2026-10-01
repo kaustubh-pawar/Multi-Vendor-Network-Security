@@ -49,20 +49,9 @@ ${400 + textStream.length}
   return new Blob([pdfBody], { type: 'application/pdf' });
 }
 
-export async function downloadPdfTemplate(vendor: string = 'cisco') {
+export function downloadPdfTemplate(vendor: string = 'cisco') {
   const fileName = `Network_Configuration_Template_${vendor.toUpperCase()}.pdf`;
-  try {
-    const res = await fetch(`${getApiBase()}/audit/template/pdf?vendor=${vendor}`);
-    if (res.ok) {
-      const blob = await res.blob();
-      triggerDownload(blob, fileName);
-      return;
-    }
-  } catch (err) {
-    console.warn('Backend PDF endpoint unavailable, generating client-side PDF template', err);
-  }
 
-  // Client-side PDF fallback template
   const lines = [
     `VENDOR ECOSYSTEM: ${vendor.toUpperCase()} OS`,
     '--------------------------------------------------------------------------------',
