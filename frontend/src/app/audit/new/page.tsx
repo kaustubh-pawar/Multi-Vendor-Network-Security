@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, Terminal, ShieldCheck, FileText, Server, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
-import { uploadAuditConfig, connectSSHAudit } from '@/lib/api';
+import { uploadAuditConfig, connectSSHAudit, getApiBase } from '@/lib/api';
 import { useApp } from '@/context/AppContext';
 
 const SAMPLE_CISCO_INSECURE = `! Insecure Cisco IOS Sample
@@ -264,7 +264,7 @@ export default function NewAuditPage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono text-slate-400">Load Sample Fixtures or Download PDF Template:</span>
               <a
-                href="http://127.0.0.1:8000/api/audit/template/pdf?vendor=cisco"
+                href={`${getApiBase()}/audit/template/pdf?vendor=cisco`}
                 target="_blank"
                 rel="noreferrer"
                 download="Network_Configuration_Template_Cisco.pdf"

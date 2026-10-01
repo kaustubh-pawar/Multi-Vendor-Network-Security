@@ -12,7 +12,7 @@ import {
   Code2,
   Sparkles
 } from 'lucide-react';
-import { fetchAuditJobById } from '@/lib/api';
+import { fetchAuditJobById, getApiBase } from '@/lib/api';
 
 export default function AuditJobDetailPage() {
   const params = useParams();
@@ -98,7 +98,7 @@ export default function AuditJobDetailPage() {
 
           <div className="flex flex-col gap-2">
             <a
-              href={`http://127.0.0.1:8000/api/reports/pdf/${job.id}`}
+              href={`${getApiBase()}/reports/pdf/${job.id}`}
               target="_blank"
               rel="noreferrer"
               className="btn-amber-pill inline-flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all"
@@ -106,7 +106,7 @@ export default function AuditJobDetailPage() {
               <Download className="h-3.5 w-3.5 text-black" /> Download PDF Report
             </a>
             <a
-              href={`http://127.0.0.1:8000/api/reports/excel/${job.id}`}
+              href={`${getApiBase()}/reports/excel/${job.id}`}
               target="_blank"
               rel="noreferrer"
               className="btn-black-pill inline-flex items-center gap-2 px-4 py-2 text-xs font-bold transition-all"

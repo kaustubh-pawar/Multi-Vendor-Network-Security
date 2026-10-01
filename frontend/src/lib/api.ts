@@ -1,12 +1,34 @@
 export function getApiBase(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+  // 1. If explicit environment variable is set at build/runtime
+  if (process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== '') {
+    const url = process.env.NEXT_PUBLIC_API_URL.trim();
+    return url.endsWith('/api') ? url : `${url.replace(/\/$/, '')}/api`;
   }
+
+  // 2. Browser context auto-discovery
   if (typeof window !== 'undefined') {
-    // In browser context, relative '/api' leverages Next.js proxy to backend API,
-    // ensuring phones, external devices & localhost all reach the backend seamlessly.
-    return '/api';
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    // Railway Deployment Auto-Mapping:
+    // e.g., multi-vendor-network-security-frontend-production.up.railway.app
+    // -> https://multi-vendor-network-security-backend-production.up.railway.app/api
+    if (hostname.includes('railway.app')) {
+      const backendHost = hostname
+        .replace('-frontend-', '-backend-')
+        .replace('-frontend.', '-backend.');
+      return `${protocol}//${backendHost}/api`;
+    }
+
+    // Localhost development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://127.0.0.1:8000/api';
+    }
+
+    // LAN / Custom Hostname
+    return `${protocol}//${hostname}:8000/api`;
   }
+
   return 'http://127.0.0.1:8000/api';
 }
 
