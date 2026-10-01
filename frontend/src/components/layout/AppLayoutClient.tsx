@@ -30,7 +30,7 @@ export default function AppLayoutClient({
         )}
         <div className="flex flex-1">
           {!isLoginPage && <Sidebar />}
-          <main className={isLoginPage ? 'flex-1 w-full' : 'flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full'}>
+          <main className={isLoginPage ? 'flex-1 w-full' : 'flex-1 p-3 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden'}>
             {children}
           </main>
         </div>

@@ -66,40 +66,41 @@ function LandingScreen({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top navbar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#1f222a]">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#1f222a]">
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <ShieldCheck className="w-7 h-7 text-[#f59e0b]" />
+            <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#f59e0b]" />
             <div className="absolute inset-0 bg-[#f59e0b]/30 blur-md rounded-full" />
           </div>
-          <span className="font-mono text-sm font-bold tracking-wider text-white">ANCP</span>
-          <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/40 text-[#f59e0b] font-bold">
-            AI INTELLIGENCE PLATFORM
+          <span className="font-mono text-xs sm:text-sm font-bold tracking-wider text-white">ANCP</span>
+          <span className="font-mono text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/40 text-[#f59e0b] font-bold">
+            AI INTELLIGENCE
           </span>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs text-slate-400">
-          <span className="w-2.5 h-2.5 rounded-full bg-pass animate-ping" />
-          <span className="text-pass font-bold">SYSTEM OPERATIONAL · ENGINE ONLINE</span>
+        <div className="flex items-center gap-2 font-mono text-[10px] sm:text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-pass animate-ping shrink-0" />
+          <span className="text-pass font-bold hidden sm:inline">SYSTEM OPERATIONAL · ENGINE ONLINE</span>
+          <span className="text-pass font-bold sm:hidden">ONLINE</span>
         </div>
       </div>
 
       {/* Main hero section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-4xl">
-          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 1, type: 'spring' }} className="relative mx-auto mb-8 w-24 h-24">
+          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 1, type: 'spring' }} className="relative mx-auto mb-6 sm:mb-8 w-20 h-20 sm:w-24 sm:h-24">
             <div className="absolute inset-0 rounded-full border-2 border-[#f59e0b]/40 animate-spinSlow" />
             <div className="absolute inset-2 rounded-full border border-pass/30 animate-spinSlow" style={{ animationDirection: 'reverse' }} />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative">
-                <ShieldCheck className="w-10 h-10 text-[#f59e0b]" strokeWidth={1.5} />
+                <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-[#f59e0b]" strokeWidth={1.5} />
                 <div className="absolute inset-0 bg-[#f59e0b]/30 blur-xl rounded-full" />
               </div>
             </div>
           </motion.div>
 
-          <h1 className="text-5xl md:text-7xl font-serif font-bold tracking-tight mb-3">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-serif font-bold tracking-tight mb-3">
             <span className="text-white">ANCP</span> <span className="text-[#f59e0b]">SECURITY</span>
-            <span className="text-slate-500 ml-3 text-3xl md:text-5xl font-mono">AUDITOR</span>
+            <span className="text-slate-500 ml-2 sm:ml-3 text-2xl sm:text-3xl md:text-5xl font-mono block sm:inline">AUDITOR</span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-300 font-mono mb-2 min-h-[28px]">
