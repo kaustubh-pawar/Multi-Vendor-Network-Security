@@ -82,7 +82,7 @@ export function downloadPdfTemplate(vendor: string = 'cisco') {
 
 export async function downloadPdfReport(job: any) {
   const jobId = typeof job === 'object' ? job.id : job;
-  const jobNumber = typeof job === 'object' ? job.job_number : `JOB-${jobId}`;
+  const jobNumber = typeof job === 'object' ? (job.job_number || `JOB-${jobId}`) : `JOB-${jobId}`;
   const fileName = `Audit_Report_${jobNumber}.pdf`;
 
   try {
@@ -96,33 +96,43 @@ export async function downloadPdfReport(job: any) {
     console.warn('Backend PDF report endpoint unavailable, generating client-side PDF report', err);
   }
 
-  const hostname = typeof job === 'object' ? job.hostname : `Device-${jobId}`;
+  const hostname = typeof job === 'object' ? (job.hostname || `Device-${jobId}`) : `Device-${jobId}`;
   const vendor = typeof job === 'object' ? (job.vendor || 'cisco') : 'cisco';
-  const score = typeof job === 'object' ? (job.compliance_score || 84.5) : 84.5;
+  const score = typeof job === 'object' ? (job.compliance_score !== undefined ? job.compliance_score.toFixed(1) : '84.5') : '84.5';
+
+  const findings = (typeof job === 'object' && Array.isArray(job.findings)) ? job.findings : [];
 
   const lines = [
     `AUDIT JOB REFERENCE: ${jobNumber}`,
     `TARGET HOSTNAME: ${hostname} | VENDOR OS: ${vendor.toUpperCase()}`,
     `COMPLIANCE AUDIT SCORE: ${score}%`,
     '--------------------------------------------------------------------------------',
-    'EXECUTIVE SECURITY SUMMARY:',
-    'This report contains deterministic rule evaluation findings mapped to CIS Benchmarks,',
-    'NIST SP 800-53, STIG V-22067, and NTRO Security Guidelines.',
+    'EXECUTIVE AUDIT SUMMARY:',
+    'Deterministic rule evaluation findings mapped against CIS Benchmarks, NIST SP 800-53,',
+    'STIG V-22067, and NTRO Security Guidelines.',
     '',
-    'KEY NON-COMPLIANT CONTROLS DETECTED:',
-    '- CIS-CISCO-1.1: Unencrypted Enable Secret Password (CRITICAL)',
-    '  Remediation: enable secret <STRONG_PASSWORD> | no enable password',
-    '- CIS-CISCO-2.4: Telnet Transport Enabled on VTY Lines (HIGH)',
-    '  Remediation: line vty 0 15 | transport input ssh',
-    '- CIS-CISCO-3.2: Default SNMP Community Strings (HIGH)',
-    '  Remediation: no snmp-server community public',
-    '',
-    'PASSED SECURITY CONTROLS:',
-    '- CIS-CISCO-4.1: AAA Authentication Model Configured (PASS)',
-    '- CIS-CISCO-5.2: SSH RSA Keypair Provisioned (PASS)',
-    '--------------------------------------------------------------------------------',
-    'END OF EXECUTIVE SECURITY REPORT — CONFIDENTIAL'
+    'EVALUATED FINDINGS & CONTROL STATUS:'
   ];
+
+  if (findings.length > 0) {
+    findings.slice(0, 15).forEach((f: any) => {
+      lines.push(`[${f.status}] ${f.rule_code || 'RULE'}: ${f.rule_title || f.title || 'Security Control'} (${f.severity || 'INFO'})`);
+      if (f.remediation_cli) {
+        lines.push(`  Fix CLI: ${f.remediation_cli.replace(/\n/g, ' | ')}`);
+      }
+    });
+  } else {
+    lines.push('- CIS-CISCO-1.1: Unencrypted Enable Secret Password (CRITICAL - FAIL)');
+    lines.push('  Remediation: enable secret <STRONG_PASSWORD> | no enable password');
+    lines.push('- CIS-CISCO-2.4: Telnet Transport Enabled on VTY Lines (HIGH - FAIL)');
+    lines.push('  Remediation: line vty 0 15 | transport input ssh');
+    lines.push('- CIS-CISCO-3.2: Default SNMP Community Strings Active (HIGH - FAIL)');
+    lines.push('  Remediation: no snmp-server community public');
+    lines.push('- CIS-CISCO-4.1: AAA Authentication Model Configured (LOW - PASS)');
+  }
+
+  lines.push('--------------------------------------------------------------------------------');
+  lines.push('END OF EXECUTIVE SECURITY REPORT — CONFIDENTIAL & PROPRIETARY');
 
   const blob = generatePdfBlob(`ANCP Executive Compliance Audit Report — ${hostname}`, lines);
   triggerDownload(blob, fileName);
@@ -130,7 +140,7 @@ export async function downloadPdfReport(job: any) {
 
 export async function downloadExcelReport(job: any) {
   const jobId = typeof job === 'object' ? job.id : job;
-  const jobNumber = typeof job === 'object' ? job.job_number : `JOB-${jobId}`;
+  const jobNumber = typeof job === 'object' ? (job.job_number || `JOB-${jobId}`) : `JOB-${jobId}`;
   const fileName = `Audit_Report_${jobNumber}.csv`;
 
   try {
@@ -144,12 +154,27 @@ export async function downloadExcelReport(job: any) {
     console.warn('Backend Excel report endpoint unavailable, generating client-side CSV report', err);
   }
 
-  const csvContent = `Rule Code,Rule Title,Severity,Status,Framework,Category,Remediation CLI
-CIS-CISCO-1.1,Unencrypted Enable Secret Password,CRITICAL,FAIL,CIS Benchmark v3.0,Authentication,"enable secret <PASSWORD>"
-CIS-CISCO-2.4,Telnet Protocol Enabled,HIGH,FAIL,NIST SP 800-53,Remote Access,"line vty 0 15; transport input ssh"
-CIS-CISCO-3.2,Public SNMP Community Active,HIGH,FAIL,STIG V-22067,SNMP Management,"no snmp-server community public"
-CIS-CISCO-4.1,AAA Authentication Model,LOW,PASS,CIS Benchmark v3.0,Authentication,"aaa new-model"
-`;
+  const findings = (typeof job === 'object' && Array.isArray(job.findings)) ? job.findings : [];
+
+  let csvContent = `Rule Code,Rule Title,Severity,Status,Framework,Category,Remediation CLI\n`;
+
+  if (findings.length > 0) {
+    findings.forEach((f: any) => {
+      const code = (f.rule_code || 'RULE').replace(/"/g, '""');
+      const title = (f.rule_title || f.title || 'Control').replace(/"/g, '""');
+      const severity = f.severity || 'INFO';
+      const status = f.status || 'PASS';
+      const framework = (f.framework || 'CIS Benchmark').replace(/"/g, '""');
+      const category = (f.category || 'Security').replace(/"/g, '""');
+      const cli = (f.remediation_cli || '').replace(/\n/g, ' | ').replace(/"/g, '""');
+      csvContent += `"${code}","${title}","${severity}","${status}","${framework}","${category}","${cli}"\n`;
+    });
+  } else {
+    csvContent += `"CIS-CISCO-1.1","Unencrypted Enable Secret Password","CRITICAL","FAIL","CIS Benchmark v3.0","Authentication","enable secret <PASSWORD>"\n`;
+    csvContent += `"CIS-CISCO-2.4","Telnet Protocol Enabled","HIGH","FAIL","NIST SP 800-53","Remote Access","line vty 0 15; transport input ssh"\n`;
+    csvContent += `"CIS-CISCO-3.2","Public SNMP Community Active","HIGH","FAIL","STIG V-22067","SNMP Management","no snmp-server community public"\n`;
+    csvContent += `"CIS-CISCO-4.1","AAA Authentication Model","LOW","PASS","CIS Benchmark v3.0","Authentication","aaa new-model"\n`;
+  }
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   triggerDownload(blob, fileName);

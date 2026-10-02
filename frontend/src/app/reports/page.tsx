@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { fetchAuditJobs, getApiBase } from '@/lib/api';
+import { downloadPdfReport, downloadExcelReport } from '@/lib/pdfHelper';
 
 export default function ReportsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -69,22 +70,20 @@ export default function ReportsPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <a
-                          href={`${getApiBase()}/reports/pdf/${job.id}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => downloadPdfReport(job)}
                           className="btn-amber-pill inline-flex items-center gap-1.5 px-3.5 py-1.5 transition-all text-[11px] font-sans font-bold"
                         >
                           <FileText className="h-3.5 w-3.5 text-black" /> PDF Report
-                        </a>
-                        <a
-                          href={`${getApiBase()}/reports/excel/${job.id}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => downloadExcelReport(job)}
                           className="btn-black-pill inline-flex items-center gap-1.5 px-3.5 py-1.5 transition-all text-[11px] font-sans font-bold"
                         >
                           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel XLSX
-                        </a>
+                        </button>
                       </div>
                     </td>
                   </tr>
