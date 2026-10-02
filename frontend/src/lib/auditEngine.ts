@@ -58,8 +58,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Authentication",
     vendor: "cisco",
     severity: "CRITICAL",
-    pass_pattern: /(service password-encryption|enable secret \d|username .* secret \d)/i,
-    fail_pattern: /(no service password-encryption|enable password [^\d]|username .* password [^\d])/i,
+    pass_pattern: /^\s*(?!no\s+)(service password-encryption|enable secret|username .* secret)/i,
+    fail_pattern: /^\s*(no service password-encryption|enable password\b|username .* password\s+0)/i,
     remediation: "enable secret <STRONG_PASSWORD>\nservice password-encryption",
     cis: "CIS Cisco IOS Benchmark 1.1.1 (L1)",
     nist: "NIST SP 800-53 IA-5(1)",
@@ -72,8 +72,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Authentication",
     vendor: "cisco",
     severity: "HIGH",
-    pass_pattern: /\baaa new-model\b/i,
-    fail_pattern: /\bno aaa new-model\b/i,
+    pass_pattern: /^\s*(?!no\s+)aaa new-model/i,
+    fail_pattern: /^\s*no aaa new-model/i,
     remediation: "aaa new-model\naaa authentication login default local group radius",
     cis: "CIS Cisco IOS Benchmark 1.2.1 (L1)",
     nist: "NIST SP 800-53 AC-2, IA-2",
@@ -86,8 +86,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Remote Access",
     vendor: "cisco",
     severity: "CRITICAL",
-    pass_pattern: /\bip ssh version 2\b/i,
-    fail_pattern: /\b(ip ssh version 1|no ip ssh version 2)\b/i,
+    pass_pattern: /^\s*(?!no\s+)ip ssh version 2/i,
+    fail_pattern: /^\s*(ip ssh version 1|no ip ssh version 2)/i,
     remediation: "ip ssh version 2\ncrypto key generate rsa modulus 2048",
     cis: "CIS Cisco IOS Benchmark 2.1.1 (L1)",
     nist: "NIST SP 800-53 AC-17, IA-5",
@@ -100,8 +100,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Remote Access",
     vendor: "cisco",
     severity: "CRITICAL",
-    pass_pattern: /transport input ssh$/i,
-    fail_pattern: /transport input (telnet|all|telnet ssh)/i,
+    pass_pattern: /^\s*transport input ssh\s*$/i,
+    fail_pattern: /^\s*transport input .*(telnet|all)/i,
     remediation: "line vty 0 15\n transport input ssh",
     cis: "CIS Cisco IOS Benchmark 2.1.2 (L1)",
     nist: "NIST SP 800-53 AC-17(2)",
@@ -114,8 +114,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Logging",
     vendor: "cisco",
     severity: "HIGH",
-    pass_pattern: /\blogging host \d+\.\d+\.\d+\.\d+/i,
-    fail_pattern: /\bno logging (console|buffered|host)\b/i,
+    pass_pattern: /^\s*(?!no\s+)logging host \d+\.\d+\.\d+\.\d+/i,
+    fail_pattern: /^\s*no logging (console|buffered|host)/i,
     remediation: "logging host 10.10.10.50\nlogging trap informational",
     cis: "CIS Cisco IOS Benchmark 3.1.1 (L1)",
     nist: "NIST SP 800-53 AU-3, AU-6",
@@ -128,8 +128,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Logging",
     vendor: "cisco",
     severity: "MEDIUM",
-    pass_pattern: /\bservice timestamps log datetime msec\b/i,
-    fail_pattern: /\b(no service timestamps|service timestamps log uptime)\b/i,
+    pass_pattern: /^\s*(?!no\s+)service timestamps log datetime msec/i,
+    fail_pattern: /^\s*(no service timestamps|service timestamps log uptime)/i,
     remediation: "service timestamps log datetime msec show-timezone localtime",
     cis: "CIS Cisco IOS Benchmark 3.1.2 (L1)",
     nist: "NIST SP 800-53 AU-8",
@@ -142,8 +142,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "SNMP",
     vendor: "cisco",
     severity: "CRITICAL",
-    pass_pattern: /\bno snmp-server community (public|private)\b/i,
-    fail_pattern: /\bsnmp-server community (public|private)\b/i,
+    pass_pattern: /^\s*no snmp-server community (public|private)/i,
+    fail_pattern: /^\s*(?!no\s+)snmp-server community (public|private)/i,
     remediation: "no snmp-server community public\nno snmp-server community private",
     cis: "CIS Cisco IOS Benchmark 4.1.1 (L1)",
     nist: "NIST SP 800-53 IA-2, SC-7",
@@ -156,8 +156,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "SNMP",
     vendor: "cisco",
     severity: "HIGH",
-    pass_pattern: /\bsnmp-server group .* v3 priv\b/i,
-    fail_pattern: /\bsnmp-server group .* (v1|v2c)\b/i,
+    pass_pattern: /^\s*(?!no\s+)snmp-server group .* v3 priv/i,
+    fail_pattern: /^\s*(?!no\s+)snmp-server community (public|private)/i,
     remediation: "snmp-server group SECGROUP v3 priv\nsnmp-server user SECUSER SECGROUP v3 auth sha <pass> priv aes 128 <pass>",
     cis: "CIS Cisco IOS Benchmark 4.1.2 (L1)",
     nist: "NIST SP 800-53 SC-8, IA-2",
@@ -170,8 +170,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "NTP",
     vendor: "cisco",
     severity: "MEDIUM",
-    pass_pattern: /\b(ntp server|system ntp server) [^\s]+/i,
-    fail_pattern: /\bno ntp server\b/i,
+    pass_pattern: /^\s*(?!no\s+)(ntp server|system ntp server)\s+[^\s]+/i,
+    fail_pattern: /^\s*no ntp server/i,
     remediation: "ntp authenticate\nntp server 10.100.1.1 key 1",
     cis: "CIS Cisco IOS Benchmark 5.1.1 (L1)",
     nist: "NIST SP 800-53 AU-8(1)",
@@ -184,8 +184,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Admin Access",
     vendor: "cisco",
     severity: "HIGH",
-    pass_pattern: /\bexec-timeout (0?[1-9]|10) 0\b/i,
-    fail_pattern: /\bexec-timeout 0 0\b/i,
+    pass_pattern: /^\s*(?!no\s+)exec-timeout (0?[1-9]|10) 0/i,
+    fail_pattern: /^\s*exec-timeout 0 0/i,
     remediation: "line vty 0 15\n exec-timeout 10 0",
     cis: "CIS Cisco IOS Benchmark 1.3.1 (L1)",
     nist: "NIST SP 800-53 AC-12",
@@ -198,8 +198,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Admin Access",
     vendor: "cisco",
     severity: "LOW",
-    pass_pattern: /\bbanner (motd|login)\b/i,
-    fail_pattern: /\bno banner (motd|login)\b/i,
+    pass_pattern: /^\s*(?!no\s+)banner (motd|login)/i,
+    fail_pattern: /^\s*no banner (motd|login)/i,
     remediation: "banner motd ^C Unauthorized access is strictly prohibited. ^C",
     cis: "CIS Cisco IOS Benchmark 1.4.1 (L1)",
     nist: "NIST SP 800-53 AC-8",
@@ -212,8 +212,8 @@ const RULES_CATALOG: RuleDefinition[] = [
     category: "Firewall ACL",
     vendor: "cisco",
     severity: "HIGH",
-    pass_pattern: /\bdeny ip any any log\b/i,
-    fail_pattern: /\bpermit ip any any\b/i,
+    pass_pattern: /^\s*deny ip any any log/i,
+    fail_pattern: /^\s*permit ip any any/i,
     remediation: "access-list 100 deny ip any any log",
     cis: "CIS Cisco IOS Benchmark 6.1.1 (L2)",
     nist: "NIST SP 800-53 SC-7, AU-2",
@@ -269,41 +269,34 @@ export function evaluateConfigurationText(
     let lineNo = 1;
     let evidenceText = `Missing required configuration directive for ${rule.title}`;
 
-    // Search for pass pattern match across lines
+    // A. First check if explicit FAIL pattern matches anywhere in config text
+    let matchedFailLine = -1;
+    lines.forEach((lineStr, lineIdx) => {
+      if (rule.fail_pattern.test(lineStr) && matchedFailLine === -1) {
+        matchedFailLine = lineIdx + 1;
+      }
+    });
+
+    // B. Check PASS pattern match
     let matchedPassLine = -1;
     lines.forEach((lineStr, lineIdx) => {
       if (rule.pass_pattern.test(lineStr) && matchedPassLine === -1) {
         matchedPassLine = lineIdx + 1;
-        evidenceText = `Line ${lineIdx + 1}: ${lineStr.trim()}`;
       }
     });
 
-    if (matchedPassLine !== -1) {
-      // Checked if superseded by explicit fail pattern
-      let matchedFailLine = -1;
-      lines.forEach((lineStr, lineIdx) => {
-        if (rule.fail_pattern.test(lineStr) && matchedFailLine === -1) {
-          matchedFailLine = lineIdx + 1;
-        }
-      });
-
-      if (matchedFailLine !== -1 && matchedFailLine > matchedPassLine) {
-        status = 'FAIL';
-        lineNo = matchedFailLine;
-        evidenceText = `Line ${matchedFailLine}: ${lines[matchedFailLine - 1].trim()}`;
-      } else {
-        status = 'PASS';
-        lineNo = matchedPassLine;
-      }
-    } else {
-      // Check fail pattern match
-      lines.forEach((lineStr, lineIdx) => {
-        if (rule.fail_pattern.test(lineStr) && lineNo === 1) {
-          lineNo = lineIdx + 1;
-          evidenceText = `Line ${lineIdx + 1}: ${lineStr.trim()}`;
-        }
-      });
+    if (matchedFailLine !== -1) {
       status = 'FAIL';
+      lineNo = matchedFailLine;
+      evidenceText = `Line ${matchedFailLine}: ${lines[matchedFailLine - 1].trim()}`;
+    } else if (matchedPassLine !== -1) {
+      status = 'PASS';
+      lineNo = matchedPassLine;
+      evidenceText = `Line ${matchedPassLine}: ${lines[matchedPassLine - 1].trim()}`;
+    } else {
+      status = 'FAIL';
+      lineNo = 1;
+      evidenceText = `Missing required configuration directive for ${rule.title}`;
     }
 
     if (status === 'PASS') passedCount++;
