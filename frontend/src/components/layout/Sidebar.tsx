@@ -15,7 +15,8 @@ import {
   UserCheck,
   FileSpreadsheet,
   FileText,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
@@ -36,7 +37,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { audio } = useApp();
+  const { audio, logout } = useApp();
 
   return (
     <aside className="w-64 bg-[#0c0d11]/90 backdrop-blur-md border-r border-[#1f222a] min-h-[calc(100vh-73px)] p-4 flex flex-col justify-between hidden md:flex">
@@ -63,14 +64,25 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div className="p-4 rounded-2xl bg-[#111216] border border-[#1f222a] space-y-2 mt-4">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground font-mono text-[11px]">Audit Engine</span>
-          <span className="text-[#f59e0b] font-bold text-[10px] uppercase font-mono">Active</span>
+      <div className="space-y-3 mt-4">
+        <div className="p-4 rounded-2xl bg-[#111216] border border-[#1f222a] space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-mono text-[11px]">Audit Engine</span>
+            <span className="text-[#f59e0b] font-bold text-[10px] uppercase font-mono">Active</span>
+          </div>
+          <p className="text-[11px] text-slate-400 leading-snug">
+            Multi-vendor compliance & AI pattern intelligence mapped to CIS, NIST, STIG & ISO 27001.
+          </p>
         </div>
-        <p className="text-[11px] text-slate-400 leading-snug">
-          Multi-vendor compliance & AI pattern intelligence mapped to CIS, NIST, STIG & ISO 27001.
-        </p>
+
+        <Link
+          href="/login"
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-mono text-xs font-bold transition-all shadow-[0_0_12px_rgba(239,68,68,0.15)]"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Sign Out / Logout</span>
+        </Link>
       </div>
     </aside>
   );

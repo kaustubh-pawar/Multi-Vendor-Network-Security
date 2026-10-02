@@ -14,7 +14,8 @@ import {
   Search,
   Cpu,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  LogOut
 } from 'lucide-react';
 import {
   BarChart,
@@ -26,8 +27,10 @@ import {
   Cell
 } from 'recharts';
 import { fetchAuditJobs, fetchFindingsSummary, fetchMonitoredDevices } from '@/lib/api';
+import { useApp } from '@/context/AppContext';
 
 export default function DashboardPage() {
+  const { logout } = useApp();
   const [jobs, setJobs] = useState<any[]>([]);
   const [devices, setDevices] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -57,6 +60,7 @@ export default function DashboardPage() {
   }, []);
 
   const totalJobs = jobs.length;
+  const totalDeviceCount = devices.length || totalJobs;
   const avgScore = totalJobs > 0
     ? (jobs.reduce((acc, j) => acc + j.compliance_score, 0) / totalJobs).toFixed(1)
     : '0.0';
@@ -96,13 +100,24 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/configurations/upload"
-          className="btn-gold-pill inline-flex items-center gap-2 px-6 py-3 text-xs font-bold transition-all self-start md:self-auto"
-        >
-          <Upload className="h-4 w-4" />
-          Upload Configuration
-        </Link>
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <Link
+            href="/configurations/upload"
+            className="btn-gold-pill inline-flex items-center gap-2 px-6 py-3 text-xs font-bold transition-all"
+          >
+            <Upload className="h-4 w-4" />
+            Upload Configuration
+          </Link>
+          <Link
+            href="/login"
+            onClick={logout}
+            className="px-4 py-3 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(239,68,68,0.15)]"
+            title="Logout / Exit Session"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Link>
+        </div>
       </div>
 
       {/* 4 Black & Golden KPI Cards */}
@@ -115,7 +130,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-serif font-bold text-white">{devices.length || totalJobs}</span>
+            <span className="text-4xl font-serif font-bold text-white">{totalDeviceCount}</span>
             <span className="text-xs text-muted-foreground font-mono font-medium">Nodes</span>
           </div>
           <p className="text-[11px] text-muted-foreground">Cisco IOS, Junos & FortiOS devices</p>
@@ -244,10 +259,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-base font-serif font-bold text-white flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 text-primary" />
-              Findings Distribution across 500 Audits
+              Findings Distribution across {totalDeviceCount} Audits
             </h2>
             <Link href="/findings" className="text-xs font-mono font-bold text-primary hover:underline flex items-center gap-1">
-              3,760 Total Findings <ArrowUpRight className="h-3 w-3" />
+              {(summary?.total_findings || 0).toLocaleString()} Total Findings <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
 
@@ -275,7 +290,7 @@ export default function DashboardPage() {
       <div className="glass-panel rounded-3xl p-7 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-0.5">
-            <h2 className="text-base font-serif font-bold text-white">Audited Network Devices (500 Total)</h2>
+            <h2 className="text-base font-serif font-bold text-white">Audited Network Devices ({totalDeviceCount} Total)</h2>
             <p className="text-xs text-muted-foreground">Live compliance analysis per device configuration</p>
           </div>
 
@@ -283,7 +298,7 @@ export default function DashboardPage() {
             <Search className="h-3.5 w-3.5 text-muted-foreground absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Search 500 devices..."
+              placeholder={`Search ${totalDeviceCount} devices...`}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="pl-9 pr-4 py-1.5 rounded-full bg-surface-overlay border border-primary/20 text-white text-xs font-mono focus:outline-none focus:border-primary"
@@ -293,7 +308,7 @@ export default function DashboardPage() {
 
         {loading ? (
           <div className="py-12 text-center text-xs text-muted-foreground font-mono animate-pulse">
-            Loading 500 audited device configurations...
+            Loading audited device configurations...
           </div>
         ) : (
           <>

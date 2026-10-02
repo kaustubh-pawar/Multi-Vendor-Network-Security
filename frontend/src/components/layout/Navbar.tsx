@@ -141,9 +141,10 @@ export default function Navbar() {
             href="/login"
             onClick={logout}
             title="Sign Out / Switch Terminal Identity"
-            className="hidden sm:p-2.5 p-2 rounded-2xl bg-[#14151e] border border-[#222533] text-slate-400 hover:text-red-400 hover:border-red-500/40 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 font-mono text-xs font-bold transition-all shadow-[0_0_12px_rgba(239,68,68,0.2)]"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </Link>
 
           {/* 8. Mobile Menu Hamburger Toggle (Smartphone Screen View) */}

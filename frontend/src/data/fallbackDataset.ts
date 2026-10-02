@@ -169,15 +169,56 @@ export function getFallback500Jobs(): FallbackJob[] {
 }
 
 export function getFallbackSummary() {
+  const jobs = cachedJobs;
+  const totalJobs = jobs.length;
+
+  let totalScore = 0;
+  let critical = 0;
+  let high = 0;
+  let medium = 0;
+  let low = 0;
+  const vendorCounts: Record<string, number> = { cisco: 0, junos: 0, fortios: 0 };
+
+  jobs.forEach((j) => {
+    totalScore += j.compliance_score;
+    const v = (j.vendor || 'cisco').toLowerCase();
+    vendorCounts[v] = (vendorCounts[v] || 0) + 1;
+
+    // Calculate finding distribution based on failed rules & compliance score
+    if (j.failed_rules > 0) {
+      if (j.compliance_score < 30) {
+        critical += Math.max(1, Math.floor(j.failed_rules * 0.4));
+        high += Math.max(1, Math.floor(j.failed_rules * 0.4));
+        medium += Math.floor(j.failed_rules * 0.2);
+      } else if (j.compliance_score < 70) {
+        high += Math.max(1, Math.floor(j.failed_rules * 0.5));
+        medium += Math.floor(j.failed_rules * 0.3);
+        low += Math.floor(j.failed_rules * 0.2);
+      } else {
+        medium += Math.floor(j.failed_rules * 0.6);
+        low += Math.ceil(j.failed_rules * 0.4);
+      }
+    }
+  });
+
+  const avgScore = totalJobs > 0 ? Number((totalScore / totalJobs).toFixed(1)) : 82.4;
+  const totalFindings = critical + high + medium + low;
+
   return {
-    total_jobs: 500,
-    avg_score: 82.4,
-    total_findings: 3760,
-    critical_count: 342,
-    high_count: 618,
-    medium_count: 1420,
-    low_count: 1380,
-    vendor_counts: { cisco: 250, junos: 150, fortios: 100 },
+    total_jobs: totalJobs,
+    avg_score: avgScore,
+    avg_compliance_score: avgScore,
+    total_findings: totalFindings,
+    critical_count: critical,
+    high_count: high,
+    medium_count: medium,
+    low_count: low,
+    critical,
+    high,
+    medium,
+    low,
+    vendor_counts: vendorCounts,
+    pass_rate: Number((avgScore * 0.95).toFixed(1))
   };
 }
 
