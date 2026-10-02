@@ -229,7 +229,7 @@ export function getFallbackFindings() {
     hostname: j.hostname,
     vendor: j.vendor,
     rule_code: `RULE-${j.vendor.toUpperCase()}-0${(j.id % 9) + 1}`,
-    title: j.failed_rules > 3 ? 'Insecure Remote Access Protocol (Telnet Enable)' : 'Missing AAA Authentication / Syslog Host',
+    title: j.failed_rules > 3 ? 'Insecure Remote Access Protocol (Telnet Enable)' : 'Missing AAA / Syslog Host',
     category: j.id % 2 === 0 ? 'Authentication' : 'Remote Access',
     severity: j.compliance_score < 75 ? 'CRITICAL' : 'HIGH',
     status: 'FAIL',

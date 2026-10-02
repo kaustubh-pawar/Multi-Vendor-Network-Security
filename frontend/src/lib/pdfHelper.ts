@@ -93,7 +93,7 @@ const DEFAULT_REPORT_FINDINGS = [
   },
   {
     code: 'SEC-AUTH-002',
-    title: 'AAA Authentication Model Enabled',
+    title: 'AAA Model Enabled',
     severity: 'HIGH',
     status: 'PASS',
     evidence: 'Line 8: aaa new-model',

@@ -477,7 +477,7 @@ export async function fetchRulesCatalog(vendor?: string, category?: string) {
     },
     {
       rule_code: "SEC-AUTH-002",
-      title: "AAA Authentication Model Enabled",
+      title: "AAA Model Enabled",
       category: "Authentication",
       vendor: "cisco",
       severity: "HIGH",

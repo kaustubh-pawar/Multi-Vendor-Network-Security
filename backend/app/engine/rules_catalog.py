@@ -19,7 +19,7 @@ RULES_CATALOG: List[Dict[str, Any]] = [
     },
     {
         "rule_code": "SEC-AUTH-002",
-        "title": "AAA Authentication Model Enabled",
+        "title": "AAA Model Enabled",
         "category": "Authentication",
         "vendor": "cisco",
         "default_severity": "HIGH",

@@ -45,7 +45,7 @@ export function NotificationDrawer() {
     },
     {
       id: 5,
-      title: 'HIGH: Missing AAA Authentication Server',
+      title: 'HIGH: Missing AAA Server',
       device: 'junos-gw-05 (JunOS)',
       time: '1 hour ago',
       severity: 'high',
