@@ -185,37 +185,65 @@ def generate_500_dataset():
 
     db = SessionLocal()
     try:
-        print("[+] Generating and auditing 500 multi-vendor configurations...")
+        print("[+] Ingesting real dataset files from /Users/kaustubhmanoharpawar/Desktop/dataset & 500 multi-vendor configurations...")
         random.seed(42)
 
-        vendors = ["cisco"] * 220 + ["junos"] * 140 + ["fortios"] * 140
+        dataset_dir = Path("/Users/kaustubhmanoharpawar/Desktop/dataset")
+        ds_files = [
+            ("cisco_ios_HARDENED.cfg", "cisco", "EDGE-RTR-01", "Edge Router", "ISR 4451"),
+            ("cisco_ios_INSECURE.cfg", "cisco", "EDGE-RTR-01-INSECURE", "Edge Router", "ISR 4451"),
+            ("fortinet_fortios_HARDENED.conf", "fortios", "FortiGate-HARDENED-01", "Next-Gen Firewall", "FortiGate 200E"),
+            ("fortinet_fortios_INSECURE.conf", "fortios", "FortiGate-INSECURE-01", "Next-Gen Firewall", "FortiGate 200E"),
+            ("fortios_hardened_sample-2.conf.txt", "fortios", "FortiGate-HARDENED-02", "Next-Gen Firewall", "FortiGate 600E"),
+            ("juniper_junos_HARDENED.conf", "junos", "EDGE-JNPR-01", "Core Router", "MX240"),
+            ("juniper_junos_INSECURE.conf", "junos", "EDGE-JNPR-01-INSECURE", "Core Router", "MX240"),
+            ("sample-cisco-ios-config.txt", "cisco", "EdgeRouter-01-BASELINE", "Edge Router", "C2900"),
+        ]
+
+        vendors = ["cisco"] * 216 + ["junos"] * 138 + ["fortios"] * 138
         random.shuffle(vendors)
 
         now = datetime.utcnow()
 
-        for idx, vendor in enumerate(vendors, start=1):
+        for idx in range(1, 501):
             subnet = (idx % 250) + 1
-            if vendor == "cisco":
-                hostname = f"Cisco-Device-{idx:03d}"
-                tmpl = random.choice(CISCO_TEMPLATES)
-                config_text = tmpl.format(hostname=hostname, subnet=subnet)
-                ir = parse_cisco_config(config_text, device_ref=hostname)
-                dtype = random.choice(["Core Switch", "Distribution Switch", "Edge Router", "Access Switch"])
-                dmodel = random.choice(["Catalyst 9300", "Catalyst 9500", "ISR 4451", "Nexus 9300", "ASR 1001-X"])
-            elif vendor == "junos":
-                hostname = f"Junos-Router-{idx:03d}"
-                tmpl = random.choice(JUNOS_TEMPLATES)
-                config_text = tmpl.format(hostname=hostname)
-                ir = parse_junos_config(config_text, device_ref=hostname)
-                dtype = random.choice(["Core Router", "Next-Gen Firewall", "DC Leaf Switch"])
-                dmodel = random.choice(["MX240", "MX480", "SRX300", "SRX1500", "QFX5120"])
+            if idx <= len(ds_files):
+                fname, vendor, hostname, dtype, dmodel = ds_files[idx - 1]
+                fpath = dataset_dir / fname
+                if fpath.exists():
+                    config_text = fpath.read_text(encoding="utf-8", errors="ignore")
+                else:
+                    config_text = f"! Fallback config for {hostname}\nhostname {hostname}\n"
+                
+                if vendor == "cisco":
+                    ir = parse_cisco_config(config_text, device_ref=hostname)
+                elif vendor == "junos":
+                    ir = parse_junos_config(config_text, device_ref=hostname)
+                else:
+                    ir = parse_fortios_config(config_text, device_ref=hostname)
             else:
-                hostname = f"FortiGate-FW-{idx:03d}"
-                tmpl = random.choice(FORTIOS_TEMPLATES)
-                config_text = tmpl.format(hostname=hostname)
-                ir = parse_fortios_config(config_text, device_ref=hostname)
-                dtype = "Next-Gen Firewall"
-                dmodel = random.choice(["FortiGate 60F", "FortiGate 100F", "FortiGate 200E", "FortiGate 600E"])
+                vendor = vendors[idx - len(ds_files) - 1]
+                if vendor == "cisco":
+                    hostname = f"Cisco-Device-{idx:03d}"
+                    tmpl = random.choice(CISCO_TEMPLATES)
+                    config_text = tmpl.format(hostname=hostname, subnet=subnet)
+                    ir = parse_cisco_config(config_text, device_ref=hostname)
+                    dtype = random.choice(["Core Switch", "Distribution Switch", "Edge Router", "Access Switch"])
+                    dmodel = random.choice(["Catalyst 9300", "Catalyst 9500", "ISR 4451", "Nexus 9300", "ASR 1001-X"])
+                elif vendor == "junos":
+                    hostname = f"Junos-Router-{idx:03d}"
+                    tmpl = random.choice(JUNOS_TEMPLATES)
+                    config_text = tmpl.format(hostname=hostname)
+                    ir = parse_junos_config(config_text, device_ref=hostname)
+                    dtype = random.choice(["Core Router", "Next-Gen Firewall", "DC Leaf Switch"])
+                    dmodel = random.choice(["MX240", "MX480", "SRX300", "SRX1500", "QFX5120"])
+                else:
+                    hostname = f"FortiGate-FW-{idx:03d}"
+                    tmpl = random.choice(FORTIOS_TEMPLATES)
+                    config_text = tmpl.format(hostname=hostname)
+                    ir = parse_fortios_config(config_text, device_ref=hostname)
+                    dtype = "Next-Gen Firewall"
+                    dmodel = random.choice(["FortiGate 60F", "FortiGate 100F", "FortiGate 200E", "FortiGate 600E"])
 
             raw_findings = evaluate_compliance(ir)
 

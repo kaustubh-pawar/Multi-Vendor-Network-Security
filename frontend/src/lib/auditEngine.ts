@@ -40,7 +40,7 @@ interface RuleDefinition {
   rule_code: string;
   title: string;
   category: string;
-  vendor: string;
+  vendor: 'cisco' | 'junos' | 'fortios' | 'all';
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   pass_pattern: RegExp;
   fail_pattern: RegExp;
@@ -52,6 +52,7 @@ interface RuleDefinition {
 }
 
 const RULES_CATALOG: RuleDefinition[] = [
+  // --- Cisco IOS Rules ---
   {
     rule_code: "SEC-AUTH-001",
     title: "Enable Password Encryption / Hashing",
@@ -219,6 +220,94 @@ const RULES_CATALOG: RuleDefinition[] = [
     nist: "NIST SP 800-53 SC-7, AU-2",
     stig: "DISA STIG NET-1000",
     iso: "ISO 27001 A.13.1.1"
+  },
+
+  // --- Juniper Junos Rules ---
+  {
+    rule_code: "JUN-AUTH-001",
+    title: "Encrypted Root Authentication (SHA-512)",
+    category: "Authentication",
+    vendor: "junos",
+    severity: "CRITICAL",
+    pass_pattern: /encrypted-password "\$6\$/i,
+    fail_pattern: /(plain-text-password|encrypted-password "\$1\$)/i,
+    remediation: "set system root-authentication plain-text-password (uses SHA-512 $6$ hashing)",
+    cis: "CIS Juniper Junos Benchmark 1.1 (L1)",
+    nist: "NIST SP 800-53 IA-5(2)",
+    stig: "DISA STIG JUN-0010",
+    iso: "ISO 27001 A.9.4.3"
+  },
+  {
+    rule_code: "JUN-RMT-001",
+    title: "Enforce SSH v2 & Restrict Root Login",
+    category: "Remote Access",
+    vendor: "junos",
+    severity: "CRITICAL",
+    pass_pattern: /(protocol-version v2|root-login deny)/i,
+    fail_pattern: /(protocol-version v1|telnet;|ftp;|root-login allow)/i,
+    remediation: "set system services ssh protocol-version v2\nset system services ssh root-login deny",
+    cis: "CIS Juniper Junos Benchmark 2.2.1 (L1)",
+    nist: "NIST SP 800-53 AC-17, IA-2",
+    stig: "DISA STIG JUN-0120",
+    iso: "ISO 27001 A.9.4.2"
+  },
+  {
+    rule_code: "JUN-LOG-001",
+    title: "Remote Syslog Host Configured",
+    category: "Logging",
+    vendor: "junos",
+    severity: "HIGH",
+    pass_pattern: /host \d+\.\d+\.\d+\.\d+/i,
+    fail_pattern: /no remote syslog/i,
+    remediation: "set system syslog host 10.0.0.5 any notice structured-data",
+    cis: "CIS Juniper Junos Benchmark 3.1 (L1)",
+    nist: "NIST SP 800-53 AU-3",
+    stig: "DISA STIG JUN-0200",
+    iso: "ISO 27001 A.12.4.1"
+  },
+
+  // --- Fortinet FortiOS Rules ---
+  {
+    rule_code: "FGT-ADM-001",
+    title: "Disable Insecure HTTP Admin & Redirect to HTTPS",
+    category: "Admin Access",
+    vendor: "fortios",
+    severity: "CRITICAL",
+    pass_pattern: /(set admin-https-redirect enable|set admin-port disable|set admin-sport 8443|set admin-port 8080)/i,
+    fail_pattern: /(set admin-port 80\b|set admin-https-redirect disable)/i,
+    remediation: "set admin-https-redirect enable\nset admin-port disable\nset admin-sport 8443",
+    cis: "CIS Fortinet FortiOS Benchmark 2.1.3 (L1)",
+    nist: "NIST SP 800-53 AC-17(1)",
+    stig: "DISA STIG FGT-0050",
+    iso: "ISO 27001 A.13.1.1"
+  },
+  {
+    rule_code: "FGT-RMT-001",
+    title: "Restrict Interface Administrative Access",
+    category: "Remote Access",
+    vendor: "fortios",
+    severity: "CRITICAL",
+    pass_pattern: /set allowaccess (ping|https|ssh)/i,
+    fail_pattern: /set allowaccess .*(http|telnet)/i,
+    remediation: "set allowaccess ping https ssh",
+    cis: "CIS Fortinet FortiOS Benchmark 2.2 (L1)",
+    nist: "NIST SP 800-53 AC-17",
+    stig: "DISA STIG FGT-0060",
+    iso: "ISO 27001 A.13.1.2"
+  },
+  {
+    rule_code: "FGT-LOG-001",
+    title: "Enable Syslog Event Logging",
+    category: "Logging",
+    vendor: "fortios",
+    severity: "HIGH",
+    pass_pattern: /config log syslogd setting[\s\S]*?set status enable/i,
+    fail_pattern: /config log syslogd setting[\s\S]*?set status disable/i,
+    remediation: "config log syslogd setting\n set status enable\n set server 10.0.0.5\nend",
+    cis: "CIS Fortinet FortiOS Benchmark 3.2 (L1)",
+    nist: "NIST SP 800-53 AU-2",
+    stig: "DISA STIG FGT-0110",
+    iso: "ISO 27001 A.12.4.1"
   }
 ];
 
@@ -228,7 +317,7 @@ export function evaluateConfigurationText(
   vendorHint: string = 'auto'
 ): EvaluatedAuditJob {
   const lines = configText.split(/\r?\n/);
-  
+
   // 1. Extract Hostname
   let hostname = userHostname && userHostname.trim() ? userHostname.trim() : '';
   const hostMatch = configText.match(/^\s*(?:hostname|host-name|set hostname)\s+([^\s;\r\n]+)/m);
@@ -241,7 +330,9 @@ export function evaluateConfigurationText(
 
   // 2. Extract IP Address
   let ipAddress = '192.168.1.1';
-  const ipMatch = configText.match(/ip address\s+(\d+\.\d+\.\d+\.\d+)/i);
+  const ipMatch = configText.match(/ip address\s+(\d+\.\d+\.\d+\.\d+)/i) ||
+                  configText.match(/address\s+(\d+\.\d+\.\d+\.\d+)/i) ||
+                  configText.match(/set ip\s+(\d+\.\d+\.\d+\.\d+)/i);
   if (ipMatch && ipMatch[1]) {
     ipAddress = ipMatch[1];
   }
@@ -263,13 +354,18 @@ export function evaluateConfigurationText(
   let passedCount = 0;
   let failedCount = 0;
 
+  // Filter rules relevant to detected vendor
+  const applicableRules = RULES_CATALOG.filter(
+    (r) => r.vendor === 'all' || r.vendor === vendor
+  );
+
   // 4. Evaluate Deterministic Rules
-  RULES_CATALOG.forEach((rule, idx) => {
+  applicableRules.forEach((rule, idx) => {
     let status: 'PASS' | 'FAIL' = 'FAIL';
     let lineNo = 1;
     let evidenceText = `Missing required configuration directive for ${rule.title}`;
 
-    // A. First check if explicit FAIL pattern matches anywhere in config text
+    // A. Check explicit FAIL pattern match
     let matchedFailLine = -1;
     lines.forEach((lineStr, lineIdx) => {
       if (rule.fail_pattern.test(lineStr) && matchedFailLine === -1) {
@@ -285,14 +381,32 @@ export function evaluateConfigurationText(
       }
     });
 
-    if (matchedFailLine !== -1) {
+    // C. Multiline pattern match check if line-by-line didn't find pass line
+    if (matchedFailLine === -1 && matchedPassLine === -1) {
+      if (rule.pass_pattern.test(configText)) {
+        matchedPassLine = 1;
+      } else if (rule.fail_pattern.test(configText)) {
+        matchedFailLine = 1;
+      }
+    }
+
+    if (matchedFailLine !== -1 && matchedPassLine === -1) {
       status = 'FAIL';
       lineNo = matchedFailLine;
-      evidenceText = `Line ${matchedFailLine}: ${lines[matchedFailLine - 1].trim()}`;
-    } else if (matchedPassLine !== -1) {
+      evidenceText = matchedFailLine > 0 && lines[matchedFailLine - 1]
+        ? `Line ${matchedFailLine}: ${lines[matchedFailLine - 1].trim()}`
+        : `Non-compliant directive detected for ${rule.title}`;
+    } else if (matchedPassLine !== -1 && matchedFailLine === -1) {
       status = 'PASS';
       lineNo = matchedPassLine;
-      evidenceText = `Line ${matchedPassLine}: ${lines[matchedPassLine - 1].trim()}`;
+      evidenceText = matchedPassLine > 0 && lines[matchedPassLine - 1]
+        ? `Line ${matchedPassLine}: ${lines[matchedPassLine - 1].trim()}`
+        : `Compliant directive present for ${rule.title}`;
+    } else if (matchedPassLine !== -1 && matchedFailLine !== -1) {
+      // Both matched, check precedence or line position
+      status = matchedPassLine < matchedFailLine ? 'PASS' : 'FAIL';
+      lineNo = status === 'PASS' ? matchedPassLine : matchedFailLine;
+      evidenceText = lineNo > 0 && lines[lineNo - 1] ? `Line ${lineNo}: ${lines[lineNo - 1].trim()}` : rule.title;
     } else {
       status = 'FAIL';
       lineNo = 1;
@@ -314,7 +428,7 @@ export function evaluateConfigurationText(
       evidence_start_line: lineNo,
       evidence_end_line: lineNo,
       evidence_raw: evidenceText,
-      description: status === 'PASS' 
+      description: status === 'PASS'
         ? `Control is compliant. Evidence: '${evidenceText}'`
         : `Control non-compliance detected. Directive requires configuration update.`,
       remediation_cli: rule.remediation,
@@ -326,8 +440,8 @@ export function evaluateConfigurationText(
     });
   });
 
-  const totalRules = RULES_CATALOG.length;
-  const complianceScore = Number(((passedCount / totalRules) * 100).toFixed(1));
+  const totalRules = applicableRules.length;
+  const complianceScore = totalRules > 0 ? Number(((passedCount / totalRules) * 100).toFixed(1)) : 100;
 
   return {
     id: jobId,

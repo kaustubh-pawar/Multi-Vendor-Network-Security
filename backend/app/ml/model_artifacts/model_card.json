@@ -1,7 +1,7 @@
 {
   "model_version": "v1.2.0-rf-tfidf",
   "model_type": "TF-IDF + Random Forest Classifier (n_estimators=120)",
-  "trained_at": "2026-09-29T17:42:42.578024",
+  "trained_at": "2026-10-02T18:45:04.974418",
   "total_samples": 750,
   "test_samples": 150,
   "accuracy": 0.9867,

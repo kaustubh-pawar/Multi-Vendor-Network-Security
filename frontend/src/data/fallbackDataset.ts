@@ -53,7 +53,55 @@ function generate500Nodes(): { devices: FallbackDevice[]; jobs: FallbackJob[] } 
   const devices: FallbackDevice[] = [];
   const jobs: FallbackJob[] = [];
 
-  for (let i = 1; i <= 500; i++) {
+  // Seed 8 Real Multi-Vendor Dataset Configurations from /Users/kaustubhmanoharpawar/Desktop/dataset
+  const datasetSeeds = [
+    { id: 1, hostname: 'EDGE-RTR-01', vendor: 'cisco', device_type: 'Edge Router', device_model: 'ISR 4451', ip_address: '203.0.113.10', score: 100.0, totalRules: 12, failedRules: 0, status: 'COMPLIANT' },
+    { id: 2, hostname: 'EDGE-RTR-01-INSECURE', vendor: 'cisco', device_type: 'Edge Router', device_model: 'ISR 4451', ip_address: '203.0.113.10', score: 8.3, totalRules: 12, failedRules: 11, status: 'NON_COMPLIANT' },
+    { id: 3, hostname: 'FortiGate-HARDENED-01', vendor: 'fortios', device_type: 'Next-Gen Firewall', device_model: 'FortiGate 200E', ip_address: '203.0.113.30', score: 100.0, totalRules: 3, failedRules: 0, status: 'COMPLIANT' },
+    { id: 4, hostname: 'FortiGate-INSECURE-01', vendor: 'fortios', device_type: 'Next-Gen Firewall', device_model: 'FortiGate 200E', ip_address: '203.0.113.30', score: 0.0, totalRules: 3, failedRules: 3, status: 'NON_COMPLIANT' },
+    { id: 5, hostname: 'FortiGate-HARDENED-02', vendor: 'fortios', device_type: 'Next-Gen Firewall', device_model: 'FortiGate 600E', ip_address: '203.0.113.30', score: 100.0, totalRules: 3, failedRules: 0, status: 'COMPLIANT' },
+    { id: 6, hostname: 'EDGE-JNPR-01', vendor: 'junos', device_type: 'Core Router', device_model: 'MX240', ip_address: '203.0.113.20', score: 100.0, totalRules: 3, failedRules: 0, status: 'COMPLIANT' },
+    { id: 7, hostname: 'EDGE-JNPR-01-INSECURE', vendor: 'junos', device_type: 'Core Router', device_model: 'MX240', ip_address: '203.0.113.20', score: 0.0, totalRules: 3, failedRules: 3, status: 'NON_COMPLIANT' },
+    { id: 8, hostname: 'EdgeRouter-01-BASELINE', vendor: 'cisco', device_type: 'Edge Router', device_model: 'C2900', ip_address: '203.0.113.10', score: 25.0, totalRules: 12, failedRules: 9, status: 'NON_COMPLIANT' },
+  ];
+
+  datasetSeeds.forEach((s) => {
+    const passedRules = s.totalRules - s.failedRules;
+    const isoDate = new Date().toISOString();
+
+    devices.push({
+      id: s.id,
+      hostname: s.hostname,
+      vendor: s.vendor,
+      device_type: s.device_type,
+      device_model: s.device_model,
+      ip_address: s.ip_address,
+      compliance_score: s.score,
+      status: s.status,
+      total_rules: s.totalRules,
+      failed_rules: s.failedRules,
+      passed_rules: passedRules,
+      last_audited: isoDate,
+    });
+
+    jobs.push({
+      id: s.id,
+      job_number: `JOB-2026-DS0${s.id}`,
+      status: 'COMPLETED',
+      vendor: s.vendor,
+      hostname: s.hostname,
+      device_type: s.device_type,
+      device_model: s.device_model,
+      total_rules: s.totalRules,
+      passed_rules: passedRules,
+      failed_rules: s.failedRules,
+      na_rules: 0,
+      compliance_score: s.score,
+      created_at: isoDate,
+    });
+  });
+
+  for (let i = 9; i <= 500; i++) {
     const vendor = VENDORS[(i - 1) % VENDORS.length];
     let typeObj = CISCO_MODELS[0];
 
